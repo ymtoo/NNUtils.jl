@@ -1,10 +1,15 @@
 module NNUtils
 
+using Distributions
 using Flux
+using Random
 using Statistics
 using Zygote
 
 export 
+
+    # layers
+    SincConv,
 
     # blocks
     DepthwiseSeparableConv, 
@@ -20,6 +25,7 @@ export
     SmoothGradient, 
     saliencymap
 
+include("layers/sincconv.jl")
 include("./networks/blocks.jl")
 include("./networks/mobilenets.jl")
 include("saliencymaps.jl")
