@@ -1,3 +1,4 @@
+import DSP: hamming
 import Flux: expand, calc_padding, CuArray
 import Functors: @functor
 
@@ -14,7 +15,15 @@ function gett(n1, n2)
 end
 
 """
-Convolutinal layer with parameterized sinc functions which implement band-pass filters. 
+    SincConv(fs, filter, in => out, σ=identity; stride=1, pad=0, dilation=1, init=initcutofffreqs)
+
+Convolutinal layer with parameterized sinc functions which implement band-pass filters. `fs` is the
+sampling rate. Details can refer to https://github.com/FluxML/Flux.jl/blob/master/src/layers/conv.jl 
+
+# Examples
+```julia
+
+```
 
 # Reference
 Mirco Ravanelli, Yoshua Bengio, “Speaker Recognition from raw waveform with SincNet” Arxiv
@@ -42,7 +51,7 @@ end
 
 @functor SincConv
 
-function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1)) where {VT<:AbstractArray{<:Real}, T<:Real}
+function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real}, T<:Real}
     f1s = abs.(f1s)
     bws = abs.(bws)
     f2s = f1s + bws
@@ -50,7 +59,8 @@ function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1)) where
     t = reshape(gett(n1, n2) ./ fs, dims[1:2]..., 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
     f1srep = reshape(f1s, 1, 1, dims[3:4]...)
     f2srep = reshape(f2s, 1, 1, dims[3:4]...)
-    w = 2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t)
+    win = window(dims[1:2]) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
+    w = win .* (2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t))
     w ./ sum(w; dims=1)
 end
 function initcutofffreqs(rng::AbstractRNG, dims::Tuple, fs::T=convert(T, 1)) where {T<:Real}
@@ -73,4 +83,11 @@ function (c::SincConv)(x::AbstractArray)
     σ = c.σ
     cdims = DenseConvDims(x, weight; stride=c.stride, padding=c.pad, dilation=c.dilation)
     σ.(Flux.conv(x, weight, cdims))
+end
+
+function Base.show(io::IO, l::SincConv)
+    print(io, "SincConv(", l.fs)
+    print(io, ", ", l.dims[1:2], ", ", l.dims[3], "=>", l.dims[4])
+    l.σ == identity || print(io, ", ", l.σ)
+    print(io, ")")
 end

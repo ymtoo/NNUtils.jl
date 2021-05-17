@@ -4,6 +4,7 @@ authors = ["ymtoo <ymtoo86@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
