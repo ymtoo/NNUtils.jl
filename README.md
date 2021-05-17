@@ -1,13 +1,15 @@
 # NNUtils
 This package provides neural net utilities:
+- standard networks
+  - [x] mobilenets
+  - [ ] resnet
 - neural network blocks
   - [x] DepthwiseSeparableConv
   - [x] BottleneckResidual
   - [x] ResnetResidualv1
   - [x] ResnetResidualv2
-- standard networks
-  - [x] mobilenets
-  - [ ] resnet
+- neural network layers
+  - [x] Sinc Conv
 - saliency maps 
   - [x] Gradient
   - [x] SmoothGradient
