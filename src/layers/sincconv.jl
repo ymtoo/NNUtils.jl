@@ -106,8 +106,9 @@ function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), windo
     t = Zygote.ignore() do
         reshape(gett(n1, n2) ./ fs, dims[1:2]..., 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    f1srep = reshape(f1s, 1, 1, dims[3:4]...)
-    f2srep = reshape(f2s, 1, 1, dims[3:4]...)
+    f1srep, f2srep = Zygote.ignore() do
+        reshape(f1s, 1, 1, dims[3:4]...), reshape(f2s, 1, 1, dims[3:4]...)
+    end
     win = Zygote.ignore() do 
         window(dims[1:2]) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
     end
