@@ -103,10 +103,14 @@ function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), windo
     bws = abs.(bws)
     f2s = f1s + bws
     n1, n2 = dims[1:2]
-    t = reshape(gett(n1, n2) ./ fs, dims[1:2]..., 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
+    t = Zygote.ignore() do
+        reshape(gett(n1, n2) ./ fs, dims[1:2]..., 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
+    end
     f1srep = reshape(f1s, 1, 1, dims[3:4]...)
     f2srep = reshape(f2s, 1, 1, dims[3:4]...)
-    win = window(dims[1:2]) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
+    win = Zygote.ignore() do 
+        window(dims[1:2]) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
+    end
     w = win .* (2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t))
     w ./ sum(w; dims=1)
 end
