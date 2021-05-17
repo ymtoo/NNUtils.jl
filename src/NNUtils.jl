@@ -26,8 +26,8 @@ export
     saliencymap
 
 include("layers/sincconv.jl")
-include("./networks/blocks.jl")
-include("./networks/mobilenets.jl")
+include("networks/blocks.jl")
+include("networks/mobilenets.jl")
 include("saliencymaps.jl")
 
 end # module
