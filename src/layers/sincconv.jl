@@ -102,8 +102,8 @@ function sincfunctions(f1s::VT, bws::VT, t::TT, win::WT) where {VT<:AbstractArra
     f1s = abs.(f1s)
     bws = abs.(bws)
     f2s = f1s + bws
-    w = win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
-    w ./ sum(w; dims=1)
+    win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
+    #w ./ sum(w; dims=1)
 end
 function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real},T<:Real}
     f1s = abs.(f1s)
