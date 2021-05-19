@@ -98,23 +98,33 @@ end
 
 @functor SincConv
 
-function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real}, T<:Real}
+function sincfunctions(f1s::VT, bws::VT, t::TT, win::WT) where {VT<:AbstractArray{<:Real},TT,WT}
     f1s = abs.(f1s)
     bws = abs.(bws)
     f2s = f1s + bws
-    n1, n2 = dims[1:2]
-    t = Zygote.ignore() do
-        reshape(gett(n1, n2) ./ fs, dims[1:2]..., 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
-    end
-    f1srep, f2srep = Zygote.ignore() do
-        reshape(f1s, 1, 1, dims[3:4]...), reshape(f2s, 1, 1, dims[3:4]...)
-    end
-    win = Zygote.ignore() do 
-        window(dims[1:2]) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
-    end
-    w = win .* (2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t))
+    w = win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
     w ./ sum(w; dims=1)
 end
+function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real},T<:Real}
+    f1s = abs.(f1s)
+    bws = abs.(bws)
+    f2s = f1s + bws
+    n1, n2, n3, n4 = dims
+    t = Zygote.ignore() do
+        reshape(gett(n1, n2) ./ fs, n1, n2, 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
+    end
+    f1srep, f2srep = Zygote.ignore() do
+        reshape(f1s, 1, 1, n3, n4), reshape(f2s, 1, 1, n3, n4)
+    end
+    win = Zygote.ignore() do 
+        window((n1, n2)) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
+    end
+    sincfunctions(f1srep, f2srep, t, win)
+    # w = win .* (2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t))
+    # w ./ sum(w; dims=1)
+end
+sincfunctions(c::SincConv) = sincfunctions(c.f1s, c.bws, c.dims, c.fs)
+
 function initcutofffreqs(rng::AbstractRNG, dims::Tuple, fs::T=convert(T, 1)) where {T<:Real}
     cutoff1 = 0
     cutoff2 = fs / 2
@@ -131,7 +141,7 @@ end
 initcutofffreqs(dims::Tuple, fs::T=convert(T, 1)) where {T<:Real} = initcutofffreqs(Random.GLOBAL_RNG, dims, fs)
 
 function (c::SincConv)(x::AbstractArray)
-    weight = sincfunctions(c.f1s, c.bws, c.dims, c.fs)
+    weight = sincfunctions(c)
     σ = c.σ
     cdims = DenseConvDims(x, weight; stride=c.stride, padding=c.pad, dilation=c.dilation)
     σ.(Flux.conv(x, weight, cdims))
