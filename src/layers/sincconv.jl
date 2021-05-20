@@ -77,7 +77,7 @@ Mirco Ravanelli, Yoshua Bengio, “Speaker Recognition from raw waveform with Si
 """
 struct SincConv{T,D,F,N,M}
     f1s::AbstractArray{T}
-    bws::AbstractArray{T}
+    f2s::AbstractArray{T}
     fs::T
     dims::D
     σ::F
@@ -89,11 +89,11 @@ function SincConv(fs::T, k::NTuple{N,Integer}, ch::Pair{<:Integer,<:Integer},
     σ=identity; init=initcutofffreqs, stride=1, pad=0, dilation=1) where {T<:Real,N}
     dims = (k..., ch...)
     n = length(dims)
-    f1s, bws = init(dims, fs)
+    f1s, f2s = init(dims, fs)
     stride = expand(Val(n-2), stride)
     dilation = expand(Val(n-2), dilation)
     pad = calc_padding(Conv, pad, dims[1:n-2], dilation, stride)
-    SincConv(f1s, bws, fs, dims, σ, stride, pad, dilation)
+    SincConv(f1s, f2s, fs, dims, σ, stride, pad, dilation)
 end
 
 @functor SincConv
@@ -105,38 +105,39 @@ function sincfunctions(f1s::VT, f2s::VT, t::TT, win::WT) where {VT<:AbstractArra
     win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
     #w ./ sum(w; dims=1)
 end
-function sincfunctions(f1s::VT, bws::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real},T<:Real}
-    f1s = abs.(f1s)
-    bws = abs.(bws)
-    f2s = f1s + bws
+function sincfunctions(f1s::VT, f2s::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real},T<:Real}
+    f1sabs = abs.(f1s)
+    f2sabs = f1s + abs.(f2s - f1s)
+    #bws = abs.(bws)
+    #f2s = f1s + bws
     n1, n2, n3, n4 = dims
     t = Zygote.ignore() do
         reshape(gett(n1, n2) ./ fs, n1, n2, 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    f1srep, f2srep = Zygote.ignore() do
-        reshape(f1s, 1, 1, n3, n4), reshape(f2s, 1, 1, n3, n4)
+    f1sabs, f2sabs = Zygote.ignore() do
+        reshape(f1sabs, 1, 1, n3, n4), reshape(f2sabs, 1, 1, n3, n4)
     end
     win = Zygote.ignore() do 
         window((n1, n2)) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    sincfunctions(f1srep, f2srep, t, win)
+    sincfunctions(f1sabs, f2sabs, t, win)
     # w = win .* (2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t))
     # w ./ sum(w; dims=1)
 end
-sincfunctions(c::SincConv) = sincfunctions(c.f1s, c.bws, c.dims, c.fs)
+sincfunctions(c::SincConv) = sincfunctions(c.f1s, c.f2s, c.dims, c.fs)
 
 function initcutofffreqs(rng::AbstractRNG, dims::Tuple, fs::T=convert(T, 1)) where {T<:Real}
     cutoff1 = 0
     cutoff2 = fs / 2
     f1s = zeros(T, dims[3:4]...)
-    bws = zeros(T, dims[3:4]...)
+    f2s = zeros(T, dims[3:4]...)
     for i ∈ 1:dims[3]
         for j ∈ 1:dims[4]
             f1s[i,j] = rand(rng, Uniform(cutoff1, cutoff2))
-            bws[i,j] = rand(rng, Uniform(f1s[i,j], cutoff2)) - f1s[i,j]
+            f2s[i,j] = rand(rng, Uniform(f1s[i,j], cutoff2))
         end
     end
-    f1s, bws
+    f1s, f2s
 end
 initcutofffreqs(dims::Tuple, fs::T=convert(T, 1)) where {T<:Real} = initcutofffreqs(Random.GLOBAL_RNG, dims, fs)
 
