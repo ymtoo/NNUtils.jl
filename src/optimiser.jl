@@ -6,15 +6,15 @@
 # Reference
 Y. You, I. Gitman and B. Ginsburg, "Large batch training of convolutional networks", 2017.
 """
-mutable struct LARS
-    eta::Float64
-    rho::Float64
-    coef::Float64
-    beta::Float64
+mutable struct LARS{T}
+    eta::T
+    rho::T
+    coef::T
+    beta::T
     velocity::IdDict
 end
 
-LARS(η::T = 0.1, ρ::T = 0.9, coef::T = 0.001, beta::T = 0.0, decay::T=0.001) where {T<:AbstractFloat} = 
+LARS(η::T = 1f-1, ρ::T = 9f-1, coef::T = 1f-3, beta::T = 0f0, decay::T=1f-3) where {T<:AbstractFloat} = 
     Flux.Optimiser(InvDecay(decay), LARS(η, ρ, coef, beta, IdDict()))
     
 function Flux.Optimise.apply!(o::LARS, x, Δ)
