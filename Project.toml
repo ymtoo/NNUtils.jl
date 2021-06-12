@@ -1,7 +1,7 @@
 name = "NNUtils"
 uuid = "5f742cf2-5e13-414f-b3e3-b0be957d45d6"
 authors = ["ymtoo <ymtoo86@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
