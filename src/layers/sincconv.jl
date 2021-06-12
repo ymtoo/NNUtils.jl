@@ -86,7 +86,7 @@ struct SincConv{T,D,F,N,M}
     dilation::NTuple{N,Int}
 end
 function SincConv(fs::T, k::NTuple{N,Integer}, ch::Pair{<:Integer,<:Integer}, 
-    σ=identity; init=initcutofffreqs, stride=1, pad=0, dilation=1) where {T<:Real,N}
+    σ=identity; init=initmelcutofffreqs, stride=1, pad=0, dilation=1) where {T<:Real,N}
     dims = (k..., ch...)
     n = length(dims)
     f1s, f2s = init(dims, fs)
@@ -126,7 +126,16 @@ function sincfunctions(f1s::VT, f2s::VT, dims::Tuple, fs::T=convert(T, 1), windo
 end
 sincfunctions(c::SincConv) = sincfunctions(c.f1s, c.f2s, c.dims, c.fs)
 
-function initcutofffreqs(rng::AbstractRNG, dims::Tuple, fs::T=convert(T, 1)) where {T<:Real}
+function initmelcutofffreqs(dims::Tuple, fs::T=convert(T, 1)) where {T<:Real}
+    f1s = zeros(T, dims[3:4]...)
+    f2s = zeros(T, dims[3:4]...)
+    for i ∈ 1:dims[3]
+        f1s[i,:], f2s[i,:] = melcutofffrequencies(dims[4], fs)
+    end
+    f1s, f2s
+end
+
+function initrandcutofffreqs(rng::AbstractRNG, dims::Tuple, fs::T=convert(T, 1)) where {T<:Real}
     cutoff1 = 0
     cutoff2 = fs / 2
     f1s = zeros(T, dims[3:4]...)
@@ -139,7 +148,7 @@ function initcutofffreqs(rng::AbstractRNG, dims::Tuple, fs::T=convert(T, 1)) whe
     end
     f1s, f2s
 end
-initcutofffreqs(dims::Tuple, fs::T=convert(T, 1)) where {T<:Real} = initcutofffreqs(Random.GLOBAL_RNG, dims, fs)
+initrandcutofffreqs(dims::Tuple, fs::T=convert(T, 1)) where {T<:Real} = initrandcutofffreqs(Random.GLOBAL_RNG, dims, fs)
 
 function (c::SincConv)(x::AbstractArray)
     weight = sincfunctions(c)

@@ -18,11 +18,13 @@ using Random
 
     dims = (200, 1, 1, 8)
     fs = 9600f0
-    f1s, f2s = NNUtils.initcutofffreqs(dims, fs)
-    @test length(f1s) == length(f2s) == dims[4]
-    weight = NNUtils.sincfunctions(f1s, f2s, dims, fs)
-    @test size(weight) == dims
-    @test eltype(weight) == eltype(f1s) == eltype(f2s) == typeof(fs)
+    f1srand, f2srand = NNUtils.initrandcutofffreqs(dims, fs)
+    f1smel, f2smel = NNUtils.initmelcutofffreqs(dims, fs)
+    @test length(f1srand) == length(f2srand) == length(f1smel) == length(f2smel) == dims[4]
+    weightrand = NNUtils.sincfunctions(f1srand, f2srand, dims, fs)
+    weightmel = NNUtils.sincfunctions(f1smel, f2smel, dims, fs)
+    @test size(weightrand) == size(weightmel) == dims
+    @test eltype(weightrand) == eltype(weightmel) == eltype(f1srand) == eltype(f2srand) == eltype(f1smel) == eltype(f2smel) == typeof(fs)
 
     x = randn(Float32, 4800, 1, 1, 16) |> gpu
     model = Chain(SincConv(fs, (200,1), 1=>8)) |> gpu
