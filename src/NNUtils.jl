@@ -9,6 +9,9 @@ using Zygote
 
 export 
 
+    # utils
+    melcutofffrequencies,
+
     # layers
     SincConv,
 
@@ -29,6 +32,7 @@ export
     # optimiser
     LARS
 
+include("utils.jl")
 include("layers/sincconv.jl")
 include("networks/blocks.jl")
 include("networks/mobilenets.jl")

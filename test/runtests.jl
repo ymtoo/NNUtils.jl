@@ -49,3 +49,17 @@ end
         @test loss(rand(10, 10)) < 0.01
     end
 end
+
+@testset "utils" begin
+    
+    nfilters = 12
+    fs = 9600
+    lowcutoffs, highcutoffs = melcutofffrequencies(nfilters, fs)
+    @test length(lowcutoffs) == length(highcutoffs) == nfilters
+    @test lowcutoffs ≈ [0.,120.28458738,261.23829184,426.41279371,
+                         619.97007672,846.78729962,1112.57968834,1424.04454534,
+                         1789.03000492,2216.73278652,2717.92992897,3305.25034496] atol=1e-6
+    @test highcutoffs ≈ [261.23829184,426.41279371,619.97007672,846.78729962, 
+                          1112.57968834,1424.04454534,1789.03000492,2216.73278652,
+                          2717.92992897,3305.25034496,3993.49303795, 4800] atol=1e-6
+end
