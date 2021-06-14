@@ -102,17 +102,15 @@ Flux.@functor SincConv (f1s, f2s)
 #     win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
 # end
 function sincfunctions(f1s, f2s, dims::Tuple, fs::T, window::Function=hamming) where {T<:Real}
-    f1sabs = abs.(f1s)
-    f2sabs = f1s + abs.(f2s - f1s)
     n1, n2, n3, n4 = dims
     t = Zygote.ignore() do
         reshape(gett(n1, n2) ./ fs, n1, n2, 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    f1sabs, f2sabs = reshape(f1sabs, 1, 1, n3, n4), reshape(f2sabs, 1, 1, n3, n4)
+    f1s, f2s = reshape(f1s, 1, 1, n3, n4), reshape(f2s, 1, 1, n3, n4)
     win = Zygote.ignore() do 
         window((n1, n2)) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    win .* (2 .* f2sabs .* sinc.(2 .* f2sabs .* t) .- 2 .* f1sabs .* sinc.(2 .* f1sabs .* t))
+    win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
     #sincfunctions(f1sabs, f2sabs, t, win)
 end
 sincfunctions(c::SincConv) = sincfunctions(c.f1s, c.f2s, c.dims, c.fs)

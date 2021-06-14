@@ -33,7 +33,7 @@ using Random
     model = Chain(SincConv(fs, (201,1), 1=>8), flatten) 
     output = randn(Float32, 8, 16)
     ps = Flux.params(model)
-    opt = ADAM(0.01)
+    opt = ADAM(0.1)
     loss(x, y) = Flux.mse(model(x), y)
     l1 = loss(x, output)
     for t ∈ 1:3000
@@ -41,6 +41,8 @@ using Random
             loss(x,output)
         end
         Flux.Optimise.update!(opt, ps, gs)
+        ps[1] .*= sign.(ps[1]) 
+        ps[2] .= ps[1] .+ abs.(ps[2] .- ps[1])
     end
     @test loss(x, output) < l1
 end
