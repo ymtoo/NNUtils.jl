@@ -26,10 +26,23 @@ using Random
     @test size(weightrand) == size(weightmel) == dims
     @test eltype(weightrand) == eltype(weightmel) == eltype(f1srand) == eltype(f2srand) == eltype(f1smel) == eltype(f2smel) == typeof(fs)
 
-    x = randn(Float32, 4800, 1, 1, 16) |> gpu
-    model = Chain(SincConv(fs, (200,1), 1=>8)) |> gpu
-    @test typeof(model(x)) == CuArray{Float32, 4}
-    
+    x = randn(Float32, 201, 1, 1, 16) 
+    model = Chain(SincConv(fs, (201,1), 1=>8)) 
+    @test typeof(model(x)) == Array{Float32, 4}
+
+    model = Chain(SincConv(fs, (201,1), 1=>8), flatten) 
+    output = randn(Float32, 8, 16)
+    ps = Flux.params(model)
+    opt = ADAM(0.01)
+    loss(x, y) = Flux.mse(model(x), y)
+    l1 = loss(x, output)
+    for t ∈ 1:3000
+        gs = Flux.gradient(ps) do
+            loss(x,output)
+        end
+        Flux.Optimise.update!(opt, ps, gs)
+    end
+    @test loss(x, output) < l1
 end
 
 @testset "Optimise" begin

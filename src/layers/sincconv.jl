@@ -96,33 +96,24 @@ function SincConv(fs::T, k::NTuple{N,Integer}, ch::Pair{<:Integer,<:Integer},
     SincConv(f1s, f2s, fs, dims, σ, stride, pad, dilation)
 end
 
-@functor SincConv
+Flux.@functor SincConv (f1s, f2s)
 
-function sincfunctions(f1s::VT, f2s::VT, t::TT, win::WT) where {VT<:AbstractArray{<:Real},TT,WT}
-    #f1s = abs.(f1s)
-    #bws = abs.(bws)
-    #f2s = f1s + bws
-    win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
-    #w ./ sum(w; dims=1)
-end
-function sincfunctions(f1s::VT, f2s::VT, dims::Tuple, fs::T=convert(T, 1), window::Function=hamming) where {VT<:AbstractArray{<:Real},T<:Real}
+# function sincfunctions(f1s::VT, f2s::VT, t::TT, win::WT) where {VT<:AbstractArray{<:Real},TT,WT}
+#     win .* (2 .* f2s .* sinc.(2 .* f2s .* t) .- 2 .* f1s .* sinc.(2 .* f1s .* t))
+# end
+function sincfunctions(f1s, f2s, dims::Tuple, fs::T, window::Function=hamming) where {T<:Real}
     f1sabs = abs.(f1s)
     f2sabs = f1s + abs.(f2s - f1s)
-    #bws = abs.(bws)
-    #f2s = f1s + bws
     n1, n2, n3, n4 = dims
     t = Zygote.ignore() do
         reshape(gett(n1, n2) ./ fs, n1, n2, 1, 1) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    f1sabs, f2sabs = Zygote.ignore() do
-        reshape(f1sabs, 1, 1, n3, n4), reshape(f2sabs, 1, 1, n3, n4)
-    end
+    f1sabs, f2sabs = reshape(f1sabs, 1, 1, n3, n4), reshape(f2sabs, 1, 1, n3, n4)
     win = Zygote.ignore() do 
         window((n1, n2)) |> x -> convert.(T, x) |> x -> f1s isa CuArray ? gpu(x) : x
     end
-    sincfunctions(f1sabs, f2sabs, t, win)
-    # w = win .* (2 .* f2srep .* sinc.(2 .* f2srep .* t) .- 2 .* f1srep .* sinc.(2 .* f1srep .* t))
-    # w ./ sum(w; dims=1)
+    win .* (2 .* f2sabs .* sinc.(2 .* f2sabs .* t) .- 2 .* f1sabs .* sinc.(2 .* f1sabs .* t))
+    #sincfunctions(f1sabs, f2sabs, t, win)
 end
 sincfunctions(c::SincConv) = sincfunctions(c.f1s, c.f2s, c.dims, c.fs)
 
