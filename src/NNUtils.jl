@@ -11,6 +11,7 @@ export
 
     # utils
     melcutofffrequencies,
+    dftmatrix,
 
     # layers
     SincConv,
@@ -19,6 +20,9 @@ export
     DepthwiseSeparableConv, 
     BottleneckResidual, 
     ResnetResidualv2,
+
+    # networks
+    dft1Dfunctions,
 
     # mobilenets
     mobilenetv1, 
@@ -34,6 +38,7 @@ export
 
 include("utils.jl")
 include("layers/sincconv.jl")
+include("networks/init.jl")
 include("networks/blocks.jl")
 include("networks/mobilenets.jl")
 include("optimiser.jl")

@@ -17,3 +17,21 @@ function melcutofffrequencies(nfilters, fs)
     highcutoffs = hertzpoints[3:end]
     lowcutoffs, highcutoffs
 end
+
+"""
+Return a Discrete Fourier Transform (DFT) matrix.
+
+# Reference:
+https://en.wikipedia.org/wiki/DFT_matrix
+"""
+function dftmatrix(M, N)
+    ω = exp(-2π * im / N)
+    W = Matrix{typeof(ω)}(undef, M, N)
+    for j ∈ 0:M-1
+        for k ∈ 0:N-1
+            W[j+1,k+1] = ω ^ (j * k)
+        end
+    end
+    W / √N
+end
+dftmatrix(N) = dftmatrix(N, N)

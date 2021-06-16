@@ -1,4 +1,5 @@
 using NNUtils
+using FFTW
 using Flux
 using Flux: CuArray
 using Test
@@ -79,4 +80,11 @@ end
     @test highcutoffs ≈ [261.23829184,426.41279371,619.97007672,846.78729962, 
                           1112.57968834,1424.04454534,1789.03000492,2216.73278652,
                           2717.92992897,3305.25034496,3993.49303795, 4800] atol=1e-6
+
+    N = 257
+    x = randn(N)
+    W = dftmatrix(N)
+    y1 = W * x
+    y2 = fft(x)
+    @test y1 .* √N ≈ y2 atol=1e-9
 end
