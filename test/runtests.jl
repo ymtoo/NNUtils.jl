@@ -5,6 +5,17 @@ using Flux: CuArray
 using Test
 using Random
 
+@testset "salencymaps" begin
+    T = Float32
+    x = randn(T, 288, 1, 12, 1)
+    model = Chain(Conv((10,1), 12=>1, relu; pad=SamePad()),
+                  flatten,
+                  Dense(288, 9, sigmoid))
+    sm1 = saliencymap(Gradient(), model, x)
+    sm2 = saliencymap(SmoothGradient(50, 50), model, x)
+    @test size(sm1) == size(sm2) == (288, 1, 12)
+end
+
 @testset "layers/sincconv" begin
     @test NNUtils.gett(200) == -99:100
     @test NNUtils.gett(201) == -100:100
