@@ -15,9 +15,9 @@ function _saliencymap(δf, s)
     x -> abs.(x) |>
     x -> maximum(x; dims=1) |>
     vec |>
-    x -> reshape(x, s...) |>
-    x -> mean(x; dims=3) |>
-    x -> ndims(x) == 4 ? dropdims(x; dims=3) : x
+    x -> reshape(x, s...) #|>
+    #x -> mean(x; dims=3) |>
+    #x -> ndims(x) == 4 ? dropdims(x; dims=3) : x
 end
 
 abstract type SaliencyMap end
@@ -42,7 +42,7 @@ function saliencymap(sm::SmoothGradient, f, x)
     δf = jacobian(f, x)[1]
     σ = sm.noiselevel * (maximum(x) - minimum(x)) / 100
     for i ∈ 2:sm.n
-        δf += jacobian(f, x .+ σ .* randn.(eltype(δf)))
+        δf += jacobian(f, x .+ σ .* randn.(eltype(δf)))[1]
     end
     δf /= sm.n
     _saliencymap(δf, size(x)[1:end-1])
