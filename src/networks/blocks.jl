@@ -6,7 +6,8 @@ MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applicatio
 """
 function DepthwiseSeparableConv(k, ch, σ=identity; stride=1, pad=SamePad())
     Chain(
-        DepthwiseConv(k, first(ch) => first(ch); stride=stride, pad=pad),
+        Conv(k, first(ch) => first(ch); stride=stride, pad=pad, groups=first(ch)),
+        #DepthwiseConv(k, first(ch) => first(ch); stride=stride, pad=pad),
         BatchNorm(first(ch), σ),
         Conv((1, 1), ch),
         BatchNorm(last(ch), σ)
@@ -23,7 +24,8 @@ function BottleneckResidual(k, ch, σ=identity, t=1; stride=1, pad=SamePad())
     tk = t * first(ch)
     block = Chain(
         Conv((1, 1), first(ch) => tk, σ),
-        DepthwiseConv(k, tk => tk, σ; stride=stride, pad=pad),
+        Conv(k, tk => tk, σ; stride=stride, pad=pad, groups=tk),
+        #DepthwiseConv(k, tk => tk, σ; stride=stride, pad=pad),
         Conv((1, 1), tk => last(ch)) 
     )
     (first(ch) == last(ch) && (stride == 1)) ? SkipConnection(block, +) : block
