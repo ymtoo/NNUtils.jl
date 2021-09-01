@@ -23,10 +23,13 @@ MobileNetV2: Inverted Residuals and Linear Bottlenecks
 function BottleneckResidual(k, ch, σ=identity, t=1; stride=1, pad=SamePad())
     tk = t * first(ch)
     block = Chain(
-        Conv((1, 1), first(ch) => tk, σ),
+        Conv((1, 1), first(ch) => tk),
+        BatchNorm(tk, σ),
         Conv(k, tk => tk, σ; stride=stride, pad=pad, groups=tk),
+        BatchNorm(tk, σ),
         #DepthwiseConv(k, tk => tk, σ; stride=stride, pad=pad),
-        Conv((1, 1), tk => last(ch)) 
+        Conv((1, 1), tk => last(ch)),
+        BatchNorm(last(ch))
     )
     (first(ch) == last(ch) && (stride == 1)) ? SkipConnection(block, +) : block
 end
