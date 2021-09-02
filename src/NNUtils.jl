@@ -20,6 +20,8 @@ export
     DepthwiseSeparableConv, 
     BottleneckResidual, 
     ResnetResidualv2,
+    SqueezeExcitation,
+    MBConv,
 
     # networks
     dft1Dfunctions,
@@ -27,6 +29,9 @@ export
     # mobilenets
     mobilenetv1, 
     mobilenetv1_small,
+
+    # efficientnets
+    efficientnetb0,
 
     # saliencymaps
     Gradient, 
@@ -41,6 +46,7 @@ include("layers/sincconv.jl")
 include("networks/init.jl")
 include("networks/blocks.jl")
 include("networks/mobilenets.jl")
+include("networks/efficientnets.jl")
 include("optimiser.jl")
 include("saliencymaps.jl")
 
