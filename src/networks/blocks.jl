@@ -85,6 +85,9 @@ end
 
 """
 MBConv
+
+# Reference
+EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks
 """
 function ConvBnAct(filter, ch, σ; stride=1, pad=SamePad(), groups=1)
     Chain(
