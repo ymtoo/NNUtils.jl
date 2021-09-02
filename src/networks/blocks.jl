@@ -65,3 +65,41 @@ function ResnetResidualv2(filter, ch, σ=identity; stride=1, pad=SamePad())
     )
     first(ch) == last(ch) && (stride == 1) ? SkipConnection(block, +) : block
 end
+
+"""
+Squeeze and excitation block.
+
+# Reference
+Squeeze-and-Excitation Networks
+"""
+function SqueezeExcitation(ch, ratio)
+    block = Chain(
+        GlobalMeanPool(),
+        flatten,
+        Dense(ch, ch÷ratio, relu; bias=false),
+        Dense(ch÷ratio, ch, sigmoid; bias=false),
+        x -> reshape(x, 1, 1, size(x,1), size(x,2))
+    )
+    SkipConnection(block, .*)
+end
+
+"""
+MBConv
+"""
+function ConvBnAct(filter, ch, σ; stride=1, pad=SamePad(), groups=1)
+    Chain(
+        Conv(filter, ch,; stride=stride, pad=pad, groups=groups),
+        BatchNorm(last(ch), σ)
+    )
+end
+function MBConv(filter, ch, σ=identity, expansion_factor=1, ratio=4, p=0; stride=1, pad=SamePad())
+    expanded = first(ch) * expansion_factor
+    block = Chain(
+        expansion_factor > 1 ? ConvBnAct((1,1), first(ch)=>expanded, σ) : identity,
+        ConvBnAct(filter, expanded=>expanded, σ; stride=stride, pad=pad, groups=expanded),
+        SqueezeExcitation(expanded, ratio),
+        ConvBnAct(filter, expanded=>last(ch), identity),
+        Dropout(p),
+    )
+    first(ch) == last(ch) && (stride == 1) ? SkipConnection(block, +) : block
+end
