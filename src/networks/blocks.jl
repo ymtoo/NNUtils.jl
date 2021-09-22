@@ -8,8 +8,8 @@ function DepthwiseSeparableConv(k, ch, σ=identity; stride=1, pad=SamePad(), kwa
     Chain(
         Conv(k, first(ch) => first(ch); stride=stride, pad=pad, groups=first(ch), kwargs...),
         #DepthwiseConv(k, first(ch) => first(ch); stride=stride, pad=pad),
-        BatchNorm(first(ch), σ, kwargs...),
-        Conv((1, 1), ch),
+        BatchNorm(first(ch), σ),
+        Conv((1, 1), ch, kwargs...),
         BatchNorm(last(ch), σ)
     )
 end
