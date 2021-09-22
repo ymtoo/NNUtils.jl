@@ -4,9 +4,9 @@ Depthwise Seperable Convolutions.
 # Reference
 MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications
 """
-function DepthwiseSeparableConv(k, ch, σ=identity; stride=1, pad=SamePad())
+function DepthwiseSeparableConv(k, ch, σ=identity; stride=1, pad=SamePad(), kwargs...)
     Chain(
-        Conv(k, first(ch) => first(ch); stride=stride, pad=pad, groups=first(ch)),
+        Conv(k, first(ch) => first(ch); stride=stride, pad=pad, groups=first(ch), kwargs...),
         #DepthwiseConv(k, first(ch) => first(ch); stride=stride, pad=pad),
         BatchNorm(first(ch), σ),
         Conv((1, 1), ch),
@@ -20,12 +20,12 @@ Bottleneck residual block.
 # Reference
 MobileNetV2: Inverted Residuals and Linear Bottlenecks
 """
-function BottleneckResidual(k, ch, σ=identity, t=1; stride=1, pad=SamePad())
+function BottleneckResidual(k, ch, σ=identity, t=1; stride=1, pad=SamePad(), kwargs...)
     tk = t * first(ch)
     block = Chain(
         Conv((1, 1), first(ch) => tk),
         BatchNorm(tk, σ),
-        Conv(k, tk => tk, σ; stride=stride, pad=pad, groups=tk),
+        Conv(k, tk => tk, σ; stride=stride, pad=pad, groups=tk, kwargs...),
         BatchNorm(tk, σ),
         #DepthwiseConv(k, tk => tk, σ; stride=stride, pad=pad),
         Conv((1, 1), tk => last(ch)),
