@@ -8,7 +8,7 @@ function DepthwiseSeparableConv(k, ch, σ=identity; stride=1, pad=SamePad(), kwa
     Chain(
         Conv(k, first(ch) => first(ch); stride=stride, pad=pad, groups=first(ch), kwargs...),
         #DepthwiseConv(k, first(ch) => first(ch); stride=stride, pad=pad),
-        BatchNorm(first(ch), σ),
+        BatchNorm(first(ch), σ, kwargs...),
         Conv((1, 1), ch),
         BatchNorm(last(ch), σ)
     )
@@ -28,7 +28,7 @@ function BottleneckResidual(k, ch, σ=identity, t=1; stride=1, pad=SamePad(), kw
         Conv(k, tk => tk, σ; stride=stride, pad=pad, groups=tk, kwargs...),
         BatchNorm(tk, σ),
         #DepthwiseConv(k, tk => tk, σ; stride=stride, pad=pad),
-        Conv((1, 1), tk => last(ch)),
+        Conv((1, 1), tk => last(ch), kwargs...),
         BatchNorm(last(ch))
     )
     (first(ch) == last(ch) && (stride == 1)) ? SkipConnection(block, +) : block
