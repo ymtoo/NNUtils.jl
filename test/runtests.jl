@@ -5,9 +5,49 @@ using Flux: CuArray
 using Test
 using Random
 
+T = Float32
+x = randn(T, 288, 1, 12, 1)
+y = randn(T, 9, 1)
+
+@testset "networks/blocks" begin
+    model1 = Chain(DepthwiseSeparableConv((11,1), 12=>1, relu; pad=SamePad()),
+                  flatten,
+                  Dense(288,9,sigmoid))
+    model2 = Chain(BottleneckResidual((11,1), 12=>1, relu; pad=SamePad()),
+                  flatten,
+                  Dense(288,9,sigmoid))
+    model3 = Chain(
+        MBConv((3,1), 12=>12, relu, 1; pad=SamePad()),
+        MBConv((3,1), 12=>1, relu, 6; pad=SamePad()),
+        flatten,
+        Dense(288,9,sigmoid)
+    )
+    for model ∈ [model1, model2, model3]
+        ps = Flux.params(model)
+        gs = gradient(ps) do 
+            Flux.Losses.mse(model(x), y)
+        end
+        modelgpu = gpu(model)
+        psgpu = Flux.params(modelgpu)
+        gsgpu = gradient(psgpu) do 
+            Flux.Losses.mse(modelgpu(gpu(x)), gpu(y))
+        end
+    end
+    
+    @test size(SqueezeExcitation(size(x, 3), 2)(x)) == size(x) 
+end
+
+@testset "networks/panns" begin
+    in = 1
+    out = 64
+    batchsize = 8
+    model = cnn10(in,out,relu,tanh)
+    x = randn(Float32,50,80,1,batchsize)
+    y = model(x)
+    @test size(y) == (out,batchsize)
+end
+
 @testset "salencymaps" begin
-    T = Float32
-    x = randn(T, 288, 1, 12, 1)
     model = Chain(Conv((10,1), 12=>1, relu; pad=SamePad()),
                   flatten,
                   Dense(288, 9, sigmoid))

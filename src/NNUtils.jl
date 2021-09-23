@@ -33,6 +33,9 @@ export
     # efficientnets
     efficientnetb0,
 
+    # panns
+    cnn10,
+
     # saliencymaps
     Gradient, 
     SmoothGradient, 
@@ -47,6 +50,7 @@ include("networks/init.jl")
 include("networks/blocks.jl")
 include("networks/mobilenets.jl")
 include("networks/efficientnets.jl")
+include("networks/panns.jl")
 include("optimiser.jl")
 include("saliencymaps.jl")
 
