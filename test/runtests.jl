@@ -10,6 +10,20 @@ x = randn(T, 288, 1, 12, 1)
 y = randn(T, 9, 1)
 
 @testset "networks/blocks" begin
+
+    fs = 9600
+    wlen = 25
+    wstride = 10
+    nfilters = 80
+    batchsize = 8
+    tdf = TDFilterbanks(fs, wlen, wstride, 1=>nfilters)
+    window_size = (fs * wlen) ÷ 1000 + 1
+    window_stride = (fs * wstride) ÷ 1000
+    for l ∈ [2400, 4800, 9600]
+        x_ts = randn(T, l, 1, 1, batchsize)
+        @test size(tdf(x_ts)) == (ceil(Int, (l-(2 * (window_size ÷ 2))) / (window_stride)), nfilters ÷ 2, 1, batchsize) 
+    end
+
     model1 = Chain(DepthwiseSeparableConv((11,1), 12=>1, relu; pad=SamePad()),
                   flatten,
                   Dense(288,9,sigmoid))

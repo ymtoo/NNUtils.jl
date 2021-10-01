@@ -106,3 +106,48 @@ function MBConv(filter, ch, σ=identity, expansion_factor=1, ratio=4, p=0; strid
     )
     first(ch) == last(ch) && (stride == 1) ? SkipConnection(block, +) : block
 end
+
+"""
+Time-domain filterbanks.
+
+# Reference
+1. Learning filterbanks from raw speech for phone recognition
+2. https://github.com/facebookresearch/tdfbanks
+"""
+function togaborweights(gfilters)
+    m, n = size(gfilters)
+    weight = zeros(Float32, m, 1, 1, 2 * n)
+    i = 1
+    for gfilter ∈ eachcol(gfilters)
+        weight[:,1,1,i] = real(gfilter)
+        weight[:,1,1,i+1] = imag(gfilter)
+        i += 2
+    end
+    weight
+end
+function towindowweights(window, m, n)
+    weight = zeros(Float32, m, 1, 1, n)
+    for i ∈ 1:n
+        weight[:,1,1,i] = window(m)
+    end
+    weight
+end
+function TDFilterbanks(fs, wlen, wstride, ch; stride=1)
+    window_size = (fs * wlen) ÷ 1000 + 1
+    window_stride = (fs * wstride) ÷ 1000 ÷ stride
+    m = last(ch) ÷ 2
+    gfilters, _ = gaborfilters(nfilters=m, fs=fs, wlen=wlen)
+    gaborweight = togaborweights(gfilters)
+    hannweight = towindowweights(hanning, window_size, m)
+    Chain(
+        Conv((window_size,1), ch; stride=stride, pad=SamePad(), bias=false, weight=gaborweight),
+        x -> abs2.(x),
+        x -> reshape(x, size(x,1), last(ch), 1, :),
+        MeanPool((1,2)),
+        x -> reshape(x, size(x,1), 1, m, :),
+        Conv((window_size,1), m=>m; stride=window_stride, groups=m, pad=0, bias=false, weight=hannweight),
+        x -> log1p.(abs.(x)),
+        InstanceNorm(m, momentum=1f0),
+        x -> reshape(x, size(x,1), m, 1, :)
+    )
+end

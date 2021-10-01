@@ -1,6 +1,7 @@
 module NNUtils
 
 using Distributions
+using DSP
 using Flux
 using LinearAlgebra
 using Random
@@ -22,13 +23,14 @@ export
     ResnetResidualv2,
     SqueezeExcitation,
     MBConv,
+    TDFilterbanks,
 
-    # networks
+    # init
     dft1Dfunctions,
+    gaborfilters,
 
     # mobilenets
     mobilenetv1, 
-    mobilenetv1_small,
 
     # efficientnets
     efficientnetb0,
@@ -46,7 +48,8 @@ export
 
 include("utils.jl")
 include("layers/sincconv.jl")
-include("networks/init.jl")
+include("init/gabor.jl")
+include("init/dft.jl")
 include("networks/blocks.jl")
 include("networks/mobilenets.jl")
 include("networks/efficientnets.jl")
