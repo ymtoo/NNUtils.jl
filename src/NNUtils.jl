@@ -31,12 +31,14 @@ export
 
     # mobilenets
     mobilenetv1, 
+    mobilenetv2,
 
     # efficientnets
     efficientnetb0,
 
     # panns
     cnn10,
+    cnn14,
 
     # saliencymaps
     Gradient, 
