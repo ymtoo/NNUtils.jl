@@ -23,7 +23,7 @@ MobileNetV2: Inverted Residuals and Linear Bottlenecks
 function BottleneckResidual(k, ch, σ=identity, t=1; stride=1, pad=SamePad(), kwargs...)
     tk = t * first(ch)
     block = Chain(
-        Conv((1, 1), first(ch) => tk),
+        Conv((1, 1), first(ch) => tk; kwargs...),
         BatchNorm(tk, σ),
         Conv(k, tk => tk, σ; stride=stride, pad=pad, groups=tk, kwargs...),
         BatchNorm(tk, σ),
@@ -42,12 +42,13 @@ Deep Residual Learning for Image Recognition.
 """
 function ResnetResidualv1(filter, ch, σ=identity; stride=1, pad=SamePad())
     block = Chain(
-        Conv(filter, ch; stride=stride, pad=pad),
+        Conv(filter, ch; stride=stride, pad=pad, bias=bias, init=glorot_uniform(rng)),
         BatchNorm(last(ch), σ),
-        Conv(filter, last(ch)=>last(ch); stride=stride, pad=pad),
+        Conv(filter, last(ch)=>last(ch); pad=pad, bias=bias, init=glorot_uniform(rng)),
         BatchNorm(last(ch), σ)
     )
-    first(ch) == last(ch) && (stride == 1) ? Chain(SkipConnection(block, +), x -> σ.(x)) : Chain(block, x -> σ.(x))
+    conv = Conv((1,1), ch; stride=stride, pad=pad, init=glorot_uniform(rng))
+    first(ch) == last(ch) && (stride == 1) ? Chain(SkipConnection(block, +), x -> σ.(x)) : Chain(Parallel(+, block, conv), x -> σ.(x))
 end
 
 """
@@ -63,7 +64,8 @@ function ResnetResidualv2(filter, ch, σ=identity; stride=1, pad=SamePad())
         BatchNorm(last(ch), σ),
         Conv(filter, last(ch)=>last(ch); stride=stride, pad=pad)
     )
-    first(ch) == last(ch) && (stride == 1) ? SkipConnection(block, +) : block
+    conv = Conv((1,1), ch; stride=stride, pad=pad, init=glorot_uniform(rng))
+    first(ch) == last(ch) && (stride == 1) ? SkipConnection(block, +) : Parallel(+, block, conv)
 end
 
 """
